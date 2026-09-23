@@ -66,8 +66,9 @@ function resetReader(restoreFocus = false) {
 function openReader(button, index) {
   if (!reader.hidden) return;
   readerSource = button;
-  if (index === 0) {
-    readerArticle.replaceChildren(document.querySelector("#story-001-content").content.cloneNode(true));
+  const storyTemplate = document.querySelector(`#story-${String(index + 1).padStart(3, "0")}-content`);
+  if (storyTemplate) {
+    readerArticle.replaceChildren(storyTemplate.content.cloneNode(true));
   } else {
     readerArticle.innerHTML = emptyStoryMarkup;
   }

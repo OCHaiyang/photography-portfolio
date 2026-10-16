@@ -189,6 +189,7 @@ window.addEventListener("load", scheduleProjectDock);
 
 document.querySelectorAll(".project-trigger").forEach(trigger => {
 const panel = document.getElementById(trigger.dataset.project);
+const content = panel.querySelector(".project-content");
 const projectItem = trigger.closest("li");
 // Keep the expanding section inside the list item and its original row sticky.
 projectItem.append(panel);
@@ -207,12 +208,23 @@ function setExpanded(open, immediate = false) {
   projectItem.classList.add("is-active");
   panel.setAttribute("aria-hidden", String(!open));
   trigger.setAttribute("aria-expanded", String(open));
-  const endHeight = open ? panel.scrollHeight : 0;
+  if (open) {
+    panel.querySelectorAll("img[data-src]").forEach((img, index) => {
+      img.loading = index === 0 ? "eager" : "lazy";
+      img.srcset = img.dataset.srcset;
+      img.src = img.dataset.src;
+      delete img.dataset.src;
+      delete img.dataset.srcset;
+    });
+  }
   const duration = immediate || matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 480;
   const start = performance.now();
   function animate(now) {
     const progress = duration ? Math.min((now - start) / duration, 1) : 1;
     const eased = .5 - Math.cos(Math.PI * progress) / 2;
+    // Measure natural content, not the panel's currently animated height.
+    // This also follows image/font layout and viewport changes mid-animation.
+    const endHeight = open ? content.getBoundingClientRect().height : 0;
     panel.style.height = `${startHeight + (endHeight - startHeight) * eased}px`;
     if (!open) window.scrollTo({top: startScroll + (endScroll - startScroll) * eased, behavior: "instant"});
     if (progress < 1) {
@@ -236,4 +248,7 @@ document.addEventListener("keydown", event => {
   if (event.key === "Escape" && expanded) setExpanded(false);
 });
 if (location.hash === `#${panel.id}`) setExpanded(true, true);
+if (typeof ResizeObserver !== "undefined") {
+  new ResizeObserver(scheduleProjectDock).observe(content);
+}
 });
